@@ -1,0 +1,184 @@
+
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- <link rel="shortcut icon" href="../../docs-assets/ico/favicon.png"> -->
+	<title>My Cloud : Empowering users worldwide with data storage</title>
+	<link href="sticky-footer-navbar.css" rel="stylesheet">
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
+	<link href="css/slide_css_side.css" rel="stylesheet">
+	<link href="css/jquery-ui-1.10.3.custom.min.css" rel="stylesheet">
+	<link href="css/jquery.cluetip.css" rel="stylesheet">
+	<link href="css/jquery.dataTables.css" rel="stylesheet" type="text/css" />
+	<link rel="stylesheet" type="text/css" href="css/DT_bootstrap.css">
+	<link rel="stylesheet" type="text/css" href="http://bootboxjs.com/css/main.css">
+	<style type="text/css">
+		body {
+			padding-top: 50px;
+			/* 60px to make the container go all the way to the bottom of the topbar */
+			background-image:url(css/images/brickwall.png); background-repeat:repeat;
+		}
+
+		.green {
+			background-color: lavender;
+		}
+
+		.btn {
+			padding: 0px 0px;
+		}
+
+	</style>
+</head>
+
+<body>
+
+	<div id="wrap">
+
+
+		<div class="navbar navbar-default navbar-fixed-top navbar-inverse" role="navigation">
+			<div class="container">
+				<div class="span10">
+					<div class="navbar-header">
+						<a class="navbar-brand" href="#">MyCloud</a>
+					</div>
+					<div class="collapse navbar-collapse">
+						<ul class="nav navbar-nav">
+							<li class="active"><a href="/home.html">Home</a></li>
+							<li><a href="/contentsearch.html">Search by Content</a></li>
+							<li><a href="/media.html">Media</a></li>
+						</ul>
+					</div><!--/.nav-collapse -->
+				</div>
+			</div>
+		</div>
+		<div class="span2"> 
+			<div id="contactFormContainer">
+				<div id="contactForm">
+
+					<div class="controls">
+						<br/><center><a class="btn btn-large btn-info" href="auth/google">Sign in With Google</a>
+						<a class="btn btn-large btn-success" href="auth/dropbox">Sign in With DropBox</a></center>
+					</div>
+
+				</div>
+				<div id="contactLink"></div>
+			</div>
+
+			<!-- Begin page content -->
+			<div class="container">
+				<div class="page-header">
+					<h1>Files listing</h1>
+				</div>
+				<div>
+					<table cellpadding="0" cellspacing="0" border="0" class="table table-bordered" id="files">
+						<thead>
+							<tr>
+								<th>File name</th>
+								<th>Size</th>
+								<th>Last Modified</th>
+							</tr>
+						</thead>
+						<tbody>
+
+						</tbody>
+					</table>
+
+				</div>
+			</div>
+
+		</div>
+
+		<div id="footer">
+
+		</div>
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
+    <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="js/jquery.cluetip.min.js"></script>
+    <script src="js/bootbox.min.js"></script>
+    <script src="//datatables.net/download/build/nightly/jquery.dataTables.js"></script>
+    
+    <script type="text/javascript">
+
+    	$(document).ready(function() {
+    		$.getJSON( "/api/v1/list/all", function( data ) {
+    			var unnamed_file_count = 0;
+    			$.each( data, function( key, val ) {
+    				var retval;
+    				/* Hacky if conditions ahead */
+    				if(val.filename==null){
+    					console.log("Unnamed Files : "+ ++unnamed_file_count);
+    				} else {
+    					if(val.size) {
+    					// console.log("Value is "+val.id+ " "+val.url+" "+val.size);
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a> <button class=\"btn btn-danger btn-mini\" id=\"'+val.id+'\" onclick=\"deleteFile(this)\"><i class=\"icon-white icon-trash\"></i> delete</button> <button class=\"btn btn-primary btn-mini\" name=\"'+val.url+'\" id=\"'+val.id+'\" onclick=\"shareFile(this)\"><i class=\"icon-white icon-user\"></i> share</button>',val.size,val.lastmodified]);
+    				} else {
+    					retval = $('#files').dataTable().fnAddData(['<a href='+val.url+' target=\"_blank\">'+val.filename+'</a>','0',val.lastmodified]);
+    				} 
+    				// console.log("Editable  : "+val.editable);
+    				if(val.editable==true) {
+    					var nTr = $('#files').dataTable().fnSettings().aoData[ retval[0] ].nTr;
+    					nTr.className = "green";
+    				}
+    			}
+    		});
+
+});
+$('#files').dataTable();
+$("#contactLink").click(function() {
+	if ($("#contactForm").is(":hidden")) {
+		$("#contactForm").slideDown("slow");
+	} else {
+		$("#contactForm").slideUp("slow");
+	}
+});
+
+$.getJSON( "/api/v1/info", function( data ) {
+	$("#footer").html('<div class="container"><p class="text-muted">Space used : '+(parseFloat(data.used_bytes)/(1024*1024*1024)).toFixed(2)+' GB ; Free Space available : '+(parseFloat(data.free_bytes)/(1024*1024*1024)).toFixed(2)+' GB</p></div>');
+});
+
+});
+
+
+
+function closeForm() {
+	$("#messageSent").show("slow");
+	setTimeout(
+		'$("#messageSent").hide();$("#contactForm").slideUp("slow")',
+		2000);
+}
+
+function deleteFile(obj){
+	bootbox.confirm("Are you sure?", function(result) {
+		console.log("Confirm deletion: "+result);
+		if(result){
+			$.getJSON( "/api/v1/delete?path="+obj['id'], function( data ) {
+				console.log(data);
+				$("#"+obj['id']).hide();
+			});
+		} 
+	}); 
+
+}
+
+function shareFile(obj){
+	console.log(obj['id']);
+	console.log(obj['name']);
+	$.getJSON( "/api/v1/share?url="+obj['name'], function( data ) {
+		console.log(data);
+		bootbox.alert(data.status);
+		$("#"+obj['id']).hide();
+	});
+}
+
+</script>
+</body>
+</html>
