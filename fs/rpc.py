@@ -19,7 +19,7 @@ AUTHORIZE_URL_PARAMS = {
   'response_type': 'code',
   'client_id': CLIENT_ID,
   'redirect_uri': 'urn:ietf:wg:oauth:2.0:oob',
-  'scope': 'https://www.googleapis.com/auth/userinfo.email'
+  'scope': 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.profile'
 }
 
 TOKENINFO_URL = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
@@ -45,11 +45,11 @@ class GoogleDriveLogin:
     self.read_keys()
 
   def read_keys(self):
-    handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'r')
     try:
+      handle = open(os.path.join(MYCLOUD_DIR, KEYS_FILE), 'r')
       self._keys = json.loads(handle.read())
       print 'Keys: ', self._keys
-    except ValueError:
+    except:
       self._keys = {}
 
     if 'access_token' in self._keys:
@@ -153,6 +153,7 @@ class GoogleDriveLogin:
       self.write_refresh_token(parsed_response['refresh_token'])
 
   def fake_login(self, url):
+    self.get_user_id()
     return url + '?user=' + self._user_id
 
   def get_info(self):
